@@ -1,0 +1,63 @@
+/**
+ * Document: MaxCompiler Tutorial (maxcompiler-tutorial.pdf)
+ * Chapter: 6
+ * Example: 3
+ * Summary:
+ *        Kernel that doubles values in a vector.
+ */
+package vectors;
+
+import com.maxeler.maxcompiler.v2.kernelcompiler.Kernel;
+import com.maxeler.maxcompiler.v2.kernelcompiler.KernelParameters;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEVar;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEVector;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.composite.DFEVectorType;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.Math;
+
+class VectorsKernel extends Kernel {
+
+	VectorsKernel(KernelParameters parameters, int vectorSize) {
+		super(parameters);
+
+		DFEVectorType<DFEVar> vectorType =
+			new DFEVectorType<DFEVar>(dfeUInt(32), vectorSize);
+
+		// Input
+		DFEVector<DFEVar> inVector1 = io.input("inVector1", vectorType);
+		DFEVector<DFEVar> inVector2 = io.input("inVector2", vectorType);
+
+        DFEVar sum_x = constant.var(0);
+		DFEVar sum_y = constant.var(0);
+		DFEVar sum_xx = constant.var(0);
+		DFEVar sum_yy = constant.var(0);
+		DFEVar sum_xy = constant.var(0);
+	
+		DFEVar n = constant.var(vectorSize);
+	
+		for(int i = 0; i < vectorSize; i++) {
+		      DFEVar x = inVector1[i];
+		      DFEVar y = inVector2[i];	
+		      
+		      sum_x += x;
+		      sum_y += y;
+		      sum_xx += x * x;
+		      sum_yy += y * y;
+		      sum_xy += x * y;
+		}
+	
+		// covariation
+		DFEVar cov = sum_xy / n - sum_x * sum_y / n / n;
+		// standard error of x
+		DFEVar sigmax = KernelMath.sqrt(sum_xx / n -  sum_x * sum_x / n / n);
+		// standard error of y
+		DFEVar sigmay = KernelMath.sqrt(sum_yy / n -  sum_y * sum_y / n / n);
+		 
+		//Output
+		//io.output("outVector", octupledVector, vectorType);
+		DFEVar result = cov / sigmax / sigmay;
+
+		// Output
+		io.output("result", result, dfeUFloat(32));
+	}
+
+}
